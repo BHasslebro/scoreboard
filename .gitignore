@@ -32,3 +32,4 @@ spotbugs-report.xml
 html/images/old-sponsor_banner
 build-ant/
 build-vscode/
+.history/

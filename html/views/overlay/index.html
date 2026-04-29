@@ -22,9 +22,9 @@
             </div>
             <div class="Team Row barBackground">
               <div class="Name VerticalCenter Box" sbDisplay="AlternateName(overlay),Name"></div>
-              <div class="Score VerticalCenter Box" sbDisplay="Score"></div>
+              <div class="Score VerticalCenter Box" sbDisplay="Score: ovlScorePulse"></div>
               <div class="Mini Box">
-                <div class="JamScore" sbDisplay="JamScore"></div>
+                <div class="JamScore" sbDisplay="JamScore: ovlJamScorePulse"></div>
               </div>
               <div class="DotTimeouts Box">
                 <div class="Dot Timeout1" sbClass="Used: Timeouts: <1"></div>
@@ -50,6 +50,7 @@
         </div>
 
         <div class="ClockBox TopClock AnimatedPanel PanelHideTop Wrapper" sbClass="Show: $.Clock">
+          <div class="ClockRing" sbClass="Running: Clock(Jam).Running"></div>
           <div class="ClockBarTop Wrapper Row SlideDown ClockNames ShowInJam ShowInBetweenJams ShowInNoClock barBackgroundTop">
             <div class="Box TextLeft Name" sbDisplay="Clock(Period).Name,Clock(Period).Number,Rule(Period.Number): sbToClockInitialNumber"></div>
             <div
@@ -88,6 +89,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Full-screen flash triggered at jam start (only visible while styled by a theme). -->
+      <div class="JamFlash" sbClass="Flash: InJam"></div>
 
       <div class="PanelWrapperCenter">
         <div class="PPJBox Wrapper PanelHideSide OverlayPanel LargePanel AnimatedPanel NoLogo" sbClass="Show: $.Panel: ==='PPJBox'">
@@ -187,22 +191,71 @@
         </div>
 
         <div class="Upcoming PanelHideSide Wrapper OverlayPanel LargePanel AnimatedPanel" sbClass="Show: $.Panel: ==='Upcoming'">
-          <div sbContext="Team(1)" sbClass="NoLogo: Logo: sbIsEmpty">
-            <img class="TeamLogo" sbAttr="src: Logo" style="float: left" />
-            <h1
-              sbDisplay="AlternateName(overlay),Name"
-              sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
-              style="margin-top: 2em; margin-left: 4em; margin-right: 0"
-            ></h1>
+          <div class="UpcomingTitle">Coming Up</div>
+          <div class="UpcomingMatchup">
+            <div class="UpcomingTeam UpcomingTeam1" sbContext="Team(1)" sbClass="NoLogo: Logo: sbIsEmpty">
+              <img class="TeamLogo" sbAttr="src: Logo" />
+              <h1
+                sbDisplay="AlternateName(overlay),Name"
+                sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
+              ></h1>
+            </div>
+            <div class="UpcomingVS">VS</div>
+            <div class="UpcomingTeam UpcomingTeam2" sbContext="Team(2)" sbClass="NoLogo: Logo: sbIsEmpty">
+              <img class="TeamLogo" sbAttr="src: Logo" />
+              <h1
+                sbDisplay="AlternateName(overlay),Name"
+                sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
+              ></h1>
+            </div>
           </div>
-          <div class="UpcomingVS">VS</div>
-          <div sbContext="Team(2)" sbClass="NoLogo: Logo: sbIsEmpty">
-            <img class="TeamLogo" sbAttr="src: Logo" style="float: right" />
-            <h1
+        </div>
+      </div>
+
+      <!-- Final Score Reveal: full-screen dramatic endgame panel.
+           Placed outside PanelWrapperCenter so the generic
+           .PanelWrapperCenter .AnimatedPanel positioning doesn't
+           clash with the fixed full-screen layout used here.
+           Teams slide in from the sides; scores count up from 0
+           to the final value; the winning team gets a WINNER badge.
+           Count-up is driven by ovlFinalScoreValue() in index.js. -->
+      <div
+        class="FinalScore"
+        sbClass="Show: $.Panel: ==='FinalScore' | T1Wins: Team(1).Score,Team(2).Score: ovlFinalWinnerT1 | T2Wins: Team(1).Score,Team(2).Score: ovlFinalWinnerT2 | Tie: Team(1).Score,Team(2).Score: ovlFinalTie"
+      >
+        <div class="FSBackdrop"></div>
+        <div class="FSConfetti">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="FSTitle">Final Score</div>
+
+        <div class="FSTeams">
+          <div class="FSTeam FSTeamLeft" sbContext="Team(1)" sbClass="NoLogo: Logo: sbIsEmpty">
+            <div class="FSWinnerBadge">Winner</div>
+            <img class="FSLogo" sbAttr="src: Logo" />
+            <div
+              class="FSName"
               sbDisplay="AlternateName(overlay),Name"
               sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
-              style="margin-top: 2em; margin-left: 0; margin-right: 4em"
-            ></h1>
+            ></div>
+            <div class="FSScore" sbDisplay="Score, /ScoreBoard.Settings.Setting(Overlay.Interactive.Panel): ovlFinalScoreValue">0</div>
+          </div>
+
+          <div class="FSDash">—</div>
+
+          <div class="FSTeam FSTeamRight" sbContext="Team(2)" sbClass="NoLogo: Logo: sbIsEmpty">
+            <div class="FSWinnerBadge">Winner</div>
+            <img class="FSLogo" sbAttr="src: Logo" />
+            <div
+              class="FSName"
+              sbDisplay="AlternateName(overlay),Name"
+              sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
+            ></div>
+            <div class="FSScore" sbDisplay="Score, /ScoreBoard.Settings.Setting(Overlay.Interactive.Panel): ovlFinalScoreValue">0</div>
           </div>
         </div>
       </div>

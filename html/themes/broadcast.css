@@ -1,0 +1,450 @@
+/*
+ * Broadcast theme — a modern, TV-studio inspired skin for the CRG Scoreboard
+ * stream overlay.
+ *
+ * Design goals:
+ *   - Dark glass surfaces with subtle gradients & blur, instead of the silver
+ *     gradient bars of the default look.
+ *   - Stronger team-color presence (team color areas are set inline via
+ *     sbCss, so we just give them crisper edges and a soft glow).
+ *   - Tabular, broadcast-grade numerals for clock / score with a gentle
+ *     drop shadow so they read over any background.
+ *   - Richer lead / penalty state feedback (pulse on lead, amber glow on
+ *     skaters with penalties).
+ *   - Smoother entry animations for panels.
+ *
+ * The theme is loaded *after* the view's own CSS (see html/json/core.js),
+ * so every rule here simply overrides the default stylesheet. All selectors
+ * are scoped to classes that only exist on the overlay view so no other
+ * screen is affected.
+ */
+
+:root {
+  --font-family: 'Inter', 'system-ui', sans-serif;
+
+  /* Broadcast palette */
+  --bc-bg-1: #0d1320;
+  --bc-bg-2: #1a2235;
+  --bc-bg-3: #232c42;
+  --bc-border: rgba(255, 255, 255, 0.08);
+  --bc-border-strong: rgba(255, 255, 255, 0.18);
+  --bc-text: #f5f7fb;
+  --bc-muted: #aab1c0;
+  --bc-accent: #ffb627;      /* lead / highlight */
+  --bc-accent-warm: #ff6a3d; /* penalty escalation */
+  --bc-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  --bc-glass: rgba(16, 22, 38, 0.72);
+  --bc-glass-strong: rgba(10, 14, 26, 0.85);
+  --bc-radius: 14px;
+  --bc-radius-sm: 8px;
+}
+
+/* ---------- Global overlay typography ---------- */
+
+#sb,
+#sb .ClockBox,
+#sb .TeamBox,
+#sb .OverlayPanel {
+  font-family: var(--font-family);
+  letter-spacing: 0.01em;
+}
+
+/* Tabular figures for anything that looks like a clock or a score. */
+#sb .Score,
+#sb .JamScore,
+#sb .Time,
+#sb .Clock.sbClock,
+#sb .PenaltyClock,
+#sb .Points {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+}
+
+/* ---------- Team box ---------- */
+
+/* Replace the silver bars with a dark glass gradient. Inline team colors
+ * (set via sbCss on .Indicator / .JammerBox) keep working on top. */
+/* Flat, solid bars. Gradients that ended in bg-1 produced a visible dark
+ * band against the JammerBox / h4 that follows, which read as a second
+ * header. A subtle inner highlight gives the bar depth without banding. */
+#sb .barBackgroundTop,
+#sb [Team='1'] .barBackground {
+  background: var(--bc-bg-2);
+}
+#sb .barBackgroundBottom,
+#sb [Team='2'] .barBackground {
+  background: var(--bc-bg-2);
+}
+
+#sb .TeamBox .Team {
+  border-right: 1px solid var(--bc-border-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--bc-shadow);
+}
+
+#sb .TeamBox [Team='1'] .Team { border-radius: 0 var(--bc-radius) 0 0; }
+#sb .TeamBox [Team='2'] .Team { border-radius: 0 0 var(--bc-radius) 0; }
+
+#sb .TeamBox .Team .Name {
+  color: var(--bc-text);
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+#sb .TeamBox .Team .Score {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  font-weight: 800;
+}
+
+#sb .TeamBox .Team .Mini .JamScore {
+  color: var(--bc-accent);
+  font-weight: 700;
+}
+
+/* Timeout / OR dots — dimmed pills on the dark bar. */
+#sb .TeamBox .Team .Dot {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4) inset;
+}
+#sb .TeamBox .Team .Dot.Used { opacity: 0.18; }
+#sb .TeamBox .Team .Dot.OfficialReview1.Retained {
+  background: var(--bc-accent);
+  box-shadow: 0 0 6px var(--bc-accent);
+}
+
+/* Indicator (Lead / Lost / Star pass) — pop it a bit. */
+#sb .TeamBox .Indicator {
+  background: var(--bc-bg-1);
+  color: var(--bc-text);
+  box-shadow: inset 0 0 0 1px var(--bc-border-strong);
+}
+
+/* Lead jam: glow the whole team row in accent color. */
+#sb .TeamBox.InJam .Lead .Team {
+  box-shadow: inset 0 0 0 2px var(--bc-accent), 0 0 18px rgba(255, 182, 39, 0.55), var(--bc-shadow);
+  animation: bcLeadPulse 1.8s ease-in-out infinite;
+}
+@keyframes bcLeadPulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px var(--bc-accent), 0 0 14px rgba(255, 182, 39, 0.45), var(--bc-shadow); }
+  50%      { box-shadow: inset 0 0 0 2px var(--bc-accent), 0 0 26px rgba(255, 182, 39, 0.85), var(--bc-shadow); }
+}
+
+/* Jammer / lineup strip. Darker, glassy, with a top separator. */
+#sb .TeamBox .JammerBox {
+  background: var(--bc-glass);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--bc-text);
+  border-top: 1px solid var(--bc-border);
+}
+#sb .TeamBox.Lineups.UseLT .JammerBox > div { border-right-color: var(--bc-border); }
+#sb .TeamBox.Lineups.UseLT .JammerBox .Penalized:not(.InBox) {
+  background: rgba(255, 106, 61, 0.22);
+  color: #ffd8c7;
+}
+#sb .TeamBox.Lineups.UseLT .JammerBox .InBox {
+  background: rgba(255, 106, 61, 0.55);
+  color: #fff;
+}
+/* Star-pass / lead marker inside jammer box. */
+#sb .TeamBox.Lineups.UseLT.InJam .Lead .JammerBox .Jamming {
+  color: var(--bc-accent);
+  text-shadow: 0 0 8px rgba(255, 182, 39, 0.85);
+  animation: bcLeadStar 1.6s ease-in-out infinite;
+}
+@keyframes bcLeadStar {
+  0%, 100% { color: var(--bc-accent); text-shadow: 0 0 6px rgba(255, 182, 39, 0.7); }
+  50%      { color: #fff;            text-shadow: 0 0 14px rgba(255, 182, 39, 1); }
+}
+
+/* Penalty clock on jammer — amber glow so it reads on dark glass. */
+#sb .TeamBox .JammerBox .PenaltyClock {
+  color: var(--bc-accent-warm);
+  text-shadow: 0 0 6px rgba(255, 106, 61, 0.8);
+  font-weight: 700;
+}
+
+/* ---------- Clock box (top right) ---------- */
+
+#sb .ClockBox {
+  border-radius: var(--bc-radius);
+  overflow: hidden;
+  box-shadow: var(--bc-shadow);
+}
+
+#sb .ClockBox .ClockBarTop.barBackgroundTop {
+  background: var(--bc-bg-2);
+  color: var(--bc-text);
+}
+#sb .ClockBox .ClockBarTop .Name { color: var(--bc-muted); font-weight: 600; letter-spacing: 0.08em; }
+
+#sb .ClockBox .ClockBarMiddle.SlideDown {
+  background: var(--bc-accent);
+}
+#sb .ClockBox .ClockDescription {
+  color: var(--bc-bg-1);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+#sb .ClockBox .BottomRow {
+  background: var(--bc-bg-2);
+  color: var(--bc-text);
+  border-top: 1px solid var(--bc-border);
+}
+#sb .ClockBox .Time {
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  font-weight: 800;
+}
+
+/* ---------- Overlay panels (roster / penalty / PPJ / upcoming) ---------- */
+
+#sb .OverlayPanel {
+  box-shadow: var(--bc-shadow);
+  border-radius: var(--bc-radius);
+  overflow: hidden;
+  /* Solid fill so default UA h1/h2 margins don't expose the body's
+   * (green/transparent) background as a thin strip at the top/bottom. */
+  background: var(--bc-bg-2);
+}
+#sb .OverlayPanel h1,
+#sb .OverlayPanel h2,
+#sb .OverlayPanel h4,
+#sb .OverlayPanel h5 {
+  margin: 0;
+}
+/* Upcoming uses pill-shaped h1s with their own shadow, so it should not
+ * carry the rectangular panel chrome. */
+#sb .Upcoming.OverlayPanel {
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+#sb .OverlayPanel h1 {
+  /* Solid fill (no gradient) so the bottom edge matches the neighbouring
+   * h4/h2, otherwise the darker gradient tail looks like a second header. */
+  background: var(--bc-bg-2);
+  color: var(--bc-text);
+  border-radius: var(--bc-radius) var(--bc-radius) 0 0;
+  letter-spacing: 0.08em;
+}
+#sb .OverlayPanel h2 {
+  background: var(--bc-bg-3);
+  color: var(--bc-muted);
+  letter-spacing: 0.1em;
+  border-radius: 0 0 var(--bc-radius) var(--bc-radius);
+}
+#sb .OverlayPanel h4 {
+  background: var(--bc-bg-2);
+  color: var(--bc-text);
+  border-bottom: 1px solid var(--bc-border);
+}
+#sb .OverlayPanel h5 {
+  background: var(--bc-bg-3);
+  color: var(--bc-text);
+}
+
+/* ---------- Points per jam ---------- */
+
+#sb .PPJContainer {
+  background: var(--bc-bg-2);
+  border-top: 1px solid var(--bc-border);
+  border-bottom: 1px solid var(--bc-border);
+}
+#sb .PPJBox [Team='1'] { border-bottom: 1px solid var(--bc-border-strong); }
+#sb .PPJBox [Team='2'] { border-top: 1px solid var(--bc-border-strong); }
+#sb .PPJBox [Period='2'] { border-left: 2px dashed var(--bc-border-strong); }
+
+#sb .GraphBlock {
+  background: linear-gradient(180deg, #5a6480, var(--bc-bg-3));
+  color: var(--bc-text);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+#sb .PPJBox [Period='2'] .GraphBlock {
+  background: linear-gradient(180deg, #6d7a99, var(--bc-bg-3));
+}
+#sb .GraphBlock.Lead .JammerStar { color: var(--bc-accent); }
+#sb .GraphBlock.Lead.Lost .JammerStar { color: var(--bc-accent-warm); }
+#sb .Points { color: var(--bc-text); }
+
+/* ---------- Roster panel ---------- */
+
+#sb .RosterTeam .Team .Skater {
+  background: var(--bc-bg-2);
+  color: var(--bc-text);
+  border-bottom: 1px solid var(--bc-border);
+}
+#sb .RosterTeam .Team .Skater:nth-child(odd) { background: var(--bc-bg-2); margin-right: 4%; }
+#sb .RosterTeam .Team .Skater:nth-child(even) { background: var(--bc-bg-3); }
+#sb .RosterTeam .Team .Skater .Number {
+  background: var(--bc-bg-1);
+  color: var(--bc-accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+#sb .RosterTeam .Team .Skater .Name { color: var(--bc-text); padding-left: 0.3em; }
+#sb .RosterTeam .Team .Skater .Flags { color: var(--bc-muted); }
+
+/* ---------- Penalty panel ---------- */
+
+#sb .PenaltyTeam .Team .Skater:nth-child(odd)  { background: var(--bc-bg-2); }
+#sb .PenaltyTeam .Team .Skater:nth-child(even) { background: var(--bc-bg-3); }
+#sb .PenaltyTeam .Team .Number,
+#sb .PenaltyTeam .Team .Name { color: var(--bc-text); }
+#sb .PenaltyTeam .Skater .Penalty {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--bc-text);
+  border-radius: 6px;
+}
+#sb .PenaltyTeam .Skater[warn='1'] .Penalty { background: #caa23a; color: #1a1205; }
+#sb .PenaltyTeam .Skater[warn='2'] .Penalty { background: var(--bc-accent-warm); color: #fff; }
+#sb .PenaltyTeam .Skater[warn='3'] .Penalty {
+  background: #d83a2b;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(216, 58, 43, 0.7);
+}
+#sb .PenaltyTeam .Skater[warn='3'] .Number,
+#sb .PenaltyTeam .Skater[warn='3'] .Name { color: #ff8b7a; }
+
+/* ---------- Upcoming panel ---------- */
+
+#sb .Upcoming { background: transparent; }
+#sb .Upcoming .UpcomingTitle {
+  color: var(--bc-text);
+  text-shadow: 0 0 18px rgba(255, 182, 39, .35);
+}
+/* h1 here has an inline team background via sbCss. Keep it clean: just a
+ * pill with a soft shadow, no extra gradient or border that would clash. */
+#sb .Upcoming .UpcomingTeam h1 {
+  border-radius: 999px;
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  padding: 0.5em 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 900;
+}
+#sb .Upcoming .UpcomingVS {
+  background: var(--bc-accent);
+  color: var(--bc-bg-1);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px rgba(255, 182, 39, .25),
+    0 0 26px rgba(255, 182, 39, 0.65);
+}
+
+/* ---------- Lower third ---------- */
+
+#sb .LowerThird {
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+}
+#sb .LowerThird .Line1 {
+  background: linear-gradient(180deg, var(--bc-bg-2), var(--bc-bg-1));
+  color: var(--bc-text);
+  border-bottom: 3px solid var(--bc-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+#sb .LowerThird .Line2 {
+  background: var(--bc-bg-3);
+  color: var(--bc-text);
+}
+
+/* ---------- Smoother panel transitions ---------- */
+
+#sb div.AnimatedPanel {
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity   0.6s ease,
+              width     0.9s ease,
+              height    0.9s ease;
+}
+#sb div.AnimatedPanel.AnimationDelay {
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s;
+}
+
+/* ---------- Dynamic effects ----------
+ * These classes are added on-the-fly by /views/overlay/index.js when the
+ * underlying state changes (score, jam score, jam start). They are purely
+ * visual and only activated when this theme is loaded; without the theme
+ * the hooks are invisible (no default styling), so there is no regression
+ * for users on the stock look.
+ */
+
+/* Score pulse: scale up & flash the team's score the moment it changes. */
+#sb .TeamBox .Team .Score {
+  transition: transform 0.25s ease, text-shadow 0.25s ease;
+  transform-origin: right center;
+}
+#sb .TeamBox .Team .Score.ScorePulse {
+  animation: bcScorePulse 0.9s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes bcScorePulse {
+  0%   { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); color: #fff; }
+  20%  { transform: scale(1.35); text-shadow: 0 0 22px var(--bc-accent), 0 0 8px #fff; color: #fff; }
+  100% { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); color: #fff; }
+}
+
+/* Jam-score pulse: briefly flash the mini jam score in accent colour. */
+#sb .TeamBox .Team .Mini .JamScore.JamPulse {
+  animation: bcJamScorePulse 0.7s ease;
+}
+@keyframes bcJamScorePulse {
+  0%   { color: var(--bc-accent); text-shadow: none; }
+  30%  { color: #fff;             text-shadow: 0 0 12px var(--bc-accent); transform: scale(1.2); }
+  100% { color: var(--bc-accent); text-shadow: none; transform: scale(1); }
+}
+
+/* Pulsing ring around the top-right clock while the jam is running.
+ * Drawn as an inner ring so we don't have to change the ClockBox's
+ * overflow:hidden (which establishes the block formatting context
+ * that the floated ClockBarTop/Middle/Bottom rely on for layout). */
+#sb .ClockBox .ClockRing {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: var(--bc-radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#sb .ClockBox .ClockRing.Running {
+  opacity: 1;
+  border-color: var(--bc-accent-warm);
+  animation: bcClockRing 1.8s ease-in-out infinite;
+}
+@keyframes bcClockRing {
+  0%, 100% { box-shadow: inset 0 0 10px 1px rgba(255, 106, 61, 0.55); }
+  50%      { box-shadow: inset 0 0 22px 4px rgba(255, 106, 61, 0.85); }
+}
+
+/* Full-screen radial flash when a new jam starts. The .Flash class is
+ * (re)applied every time InJam becomes truthy, triggering the animation. */
+#sb .JamFlash {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 9;
+  background:
+    radial-gradient(circle at 50% 40%,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 182, 39, 0.18) 35%,
+      rgba(255, 182, 39, 0.00) 60%);
+}
+#sb .JamFlash.Flash {
+  animation: bcJamFlash 0.7s ease-out;
+}
+@keyframes bcJamFlash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}

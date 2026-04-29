@@ -74,6 +74,9 @@ function ovlHandleKey(k, v, elem, e) {
     case 85: // u
       _ovlTogglePanel('Upcoming');
       break;
+    case 70: // f
+      _ovlTogglePanel('FinalScore');
+      break;
     case 32: // space
       WS.Set('ScoreBoard.Settings.Setting(Overlay.Interactive.Panel)', '');
       break;
@@ -82,6 +85,101 @@ function ovlHandleKey(k, v, elem, e) {
 
 function ovlToBackground(k, v) {
   return v || 'transparent';
+}
+
+// Briefly toggle a class on the element so themes that define an animation
+// for that class (e.g. broadcast.css) restart the animation on each change.
+// Returns the unchanged value so the display text is still rendered.
+function _ovlFlash(elem, cls, dataKey, v) {
+  const prev = elem.data(dataKey);
+  if (prev !== undefined && prev !== v) {
+    elem.removeClass(cls);
+    // Force reflow so the animation restarts reliably.
+    if (elem[0]) {
+      void elem[0].offsetWidth;
+    }
+    elem.addClass(cls);
+  }
+  elem.data(dataKey, v);
+  return v;
+}
+
+function ovlScorePulse(k, v, elem) {
+  return _ovlFlash(elem, 'ScorePulse', 'ovlScoreLast', v);
+}
+
+function ovlJamScorePulse(k, v, elem) {
+  return _ovlFlash(elem, 'JamPulse', 'ovlJamLast', v);
+}
+
+/* ---------------- Final Score Reveal ---------------- */
+
+// Winner helpers (used by sbClass on the FinalScore panel).
+function _ovlFinalScores() {
+  const a = parseInt(WS.state['ScoreBoard.CurrentGame.Team(1).Score'], 10) || 0;
+  const b = parseInt(WS.state['ScoreBoard.CurrentGame.Team(2).Score'], 10) || 0;
+  return [a, b];
+}
+function ovlFinalWinnerT1() { const [a, b] = _ovlFinalScores(); return a > b; }
+function ovlFinalWinnerT2() { const [a, b] = _ovlFinalScores(); return b > a; }
+function ovlFinalTie()      { const [a, b] = _ovlFinalScores(); return a === b; }
+
+// Count-up animated score. When the panel is not visible, or the final value
+// changes, snap to 0 and animate up to the target over ~1.8s with an easing
+// curve that lands hard on the final number.
+function ovlFinalScoreValue(k, v, elem) {
+  // The modifier is bound to two paths (Score + Panel setting) so `v` may
+  // be the panel string when that one fires. Always derive the score from
+  // the element's own context path instead.
+  const ctx = k.substring(0, k.lastIndexOf('.'));
+  const target = parseInt(WS.state[ctx + '.Score'], 10) || 0;
+  const panelShown = WS.state['ScoreBoard.Settings.Setting(Overlay.Interactive.Panel)'] === 'FinalScore';
+
+  // Cancel any in-flight animation on this element.
+  const prevRaf = elem.data('ovlFSRaf');
+  if (prevRaf) { cancelAnimationFrame(prevRaf); elem.data('ovlFSRaf', null); }
+
+  if (!panelShown) {
+    // Keep the DOM in sync so the next reveal starts from a known state.
+    elem.text(target);
+    elem.data('ovlFSTarget', target);
+    return;
+  }
+
+  elem.data('ovlFSTarget', target);
+
+  // Delay start a touch so teams have slid in before numbers start rolling.
+  const startDelay = 650;
+  const duration = 1800;
+  const start = performance.now() + startDelay;
+  elem.text('0');
+  elem.removeClass('FSScorePop');
+
+  function ease(t) {
+    // easeOutExpo: fast start, dramatic settle.
+    return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  function step(now) {
+    if (elem.data('ovlFSTarget') !== target) return; // superseded
+    if (now < start) {
+      elem.data('ovlFSRaf', requestAnimationFrame(step));
+      return;
+    }
+    const t = Math.min(1, (now - start) / duration);
+    const val = Math.round(ease(t) * target);
+    elem.text(val);
+    if (t < 1) {
+      elem.data('ovlFSRaf', requestAnimationFrame(step));
+    } else {
+      elem.data('ovlFSRaf', null);
+      // Final pop on landing.
+      elem.removeClass('FSScorePop');
+      void elem[0].offsetWidth;
+      elem.addClass('FSScorePop');
+    }
+  }
+  elem.data('ovlFSRaf', requestAnimationFrame(step));
 }
 
 function ovlToIndicator(k, v) {

@@ -2,9 +2,9 @@ package com.carolinarollergirls.scoreboard.json;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.carolinarollergirls.scoreboard.json.JSONStateListener.StateTrie;
@@ -65,18 +65,27 @@ public class JSONStateManager {
 
             // Send updates async, as the WS connections can block if the
             // kernel TCP send buffer fills up.
-            Set<JSONStateListener> sourceSet;
-            synchronized (sources) { sourceSet = sources.keySet(); }
-            for (JSONStateListener source : sourceSet) {
-                final JSONStateListener localSource = source;
+            // Take a snapshot of the sources map inside the lock to avoid
+            // ConcurrentModificationException if a listener is registered or
+            // unregistered while we are dispatching updates.
+            Map<JSONStateListener, ExecutorService> sourcesSnapshot;
+            synchronized (sources) { sourcesSnapshot = new HashMap<>(sources); }
+            for (Map.Entry<JSONStateListener, ExecutorService> entry : sourcesSnapshot.entrySet()) {
+                final JSONStateListener localSource = entry.getKey();
                 pending.incrementAndGet();
-                sources.get(source).execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        localSource.sendUpdates(localState, localChanged);
-                        pending.decrementAndGet();
-                    }
-                });
+                try {
+                    entry.getValue().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            localSource.sendUpdates(localState, localChanged);
+                            pending.decrementAndGet();
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    // Listener was unregistered (its executor shut down) between
+                    // taking the snapshot and dispatching. Safe to ignore.
+                    pending.decrementAndGet();
+                }
             }
         }
 
