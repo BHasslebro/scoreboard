@@ -1,0 +1,449 @@
+/*
+ * Junior Scrim theme — a friendly, high-energy skin for the CRG Scoreboard
+ * stream overlay, tuned for junior-derby scrimmages.
+ *
+ * Design goals:
+ *   - Bright, playful palette (teal / magenta / sunshine yellow) instead of
+ *     the aggressive reds/oranges of the Broadcast theme. Junior audiences
+ *     are kids, families and skaters new to the sport.
+ *   - Clear, chunky, rounded shapes that read well on phones / laptop streams.
+ *   - Encouraging, celebratory feedback (jam-start sparkle, score pop) –
+ *     never harsh red flashes that suggest danger.
+ *   - Penalty info still legible, but softened: amber-warning rather than
+ *     a red-alarm aesthetic.
+ *
+ * Loaded *after* the view's own CSS (see html/json/core.js), so every rule
+ * here simply overrides the default stylesheet. Selectors are scoped to
+ * classes that only exist on the overlay view.
+ */
+
+:root {
+  --font-family: 'Inter', 'system-ui', sans-serif;
+
+  /* Junior-scrim palette — bright but not garish. */
+  --js-bg-1: #1f2350;          /* deep indigo */
+  --js-bg-2: #2c3270;          /* main bar */
+  --js-bg-3: #3a4090;          /* lighter card */
+  --js-border: rgba(255, 255, 255, 0.12);
+  --js-border-strong: rgba(255, 255, 255, 0.28);
+  --js-text: #ffffff;
+  --js-muted: #d6daf5;
+  --js-accent: #ffd23f;        /* sunshine yellow — lead / highlights */
+  --js-accent-2: #2ec4b6;      /* teal — secondary highlight */
+  --js-accent-3: #ff5fa8;      /* magenta — celebratory pulses */
+  --js-warn: #ffb347;          /* amber, soft penalty warning */
+  --js-warn-strong: #ff7a3d;   /* deeper amber, never red */
+  --js-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  --js-glass: rgba(31, 35, 80, 0.75);
+  --js-radius: 18px;
+  --js-radius-sm: 10px;
+}
+
+/* ---------- Global overlay typography ---------- */
+
+#sb,
+#sb .ClockBox,
+#sb .TeamBox,
+#sb .OverlayPanel {
+  font-family: var(--font-family);
+  letter-spacing: 0.01em;
+}
+
+#sb .Score,
+#sb .JamScore,
+#sb .Time,
+#sb .Clock.sbClock,
+#sb .PenaltyClock,
+#sb .Points {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+}
+
+/* ---------- Team box ---------- */
+
+/* Replace the default silver gradient with a friendly indigo bar. Inline
+ * team colors set via sbCss on .Indicator / .JammerBox keep working. */
+#sb .barBackgroundTop,
+#sb [Team='1'] .barBackground,
+#sb .barBackgroundBottom,
+#sb [Team='2'] .barBackground {
+  background: var(--js-bg-2);
+}
+
+#sb .TeamBox .Team {
+  border-right: 1px solid var(--js-border-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--js-shadow);
+}
+
+#sb .TeamBox [Team='1'] .Team { border-radius: 0 var(--js-radius) 0 0; }
+#sb .TeamBox [Team='2'] .Team { border-radius: 0 0 var(--js-radius) 0; }
+
+#sb .TeamBox .Team .Name {
+  color: var(--js-text);
+  border-left: 3px solid var(--js-accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
+#sb .TeamBox .Team .Score {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  font-weight: 900;
+}
+
+#sb .TeamBox .Team .Mini .JamScore {
+  color: var(--js-accent);
+  font-weight: 800;
+}
+
+/* Timeout / OR dots. */
+#sb .TeamBox .Team .Dot {
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3) inset;
+}
+#sb .TeamBox .Team .Dot.Used { opacity: 0.2; }
+#sb .TeamBox .Team .Dot.OfficialReview1.Retained {
+  background: var(--js-accent);
+  box-shadow: 0 0 6px var(--js-accent);
+}
+
+/* Indicator (Lead / Lost / Star pass). */
+#sb .TeamBox .Indicator {
+  background: var(--js-bg-1);
+  color: var(--js-text);
+  box-shadow: inset 0 0 0 1px var(--js-border-strong);
+}
+
+/* Lead jam: cheerful yellow glow, gentler pulse than broadcast theme. */
+#sb .TeamBox.InJam .Lead .Team {
+  box-shadow:
+    inset 0 0 0 2px var(--js-accent),
+    0 0 16px rgba(255, 210, 63, 0.6),
+    var(--js-shadow);
+  animation: jsLeadPulse 2.2s ease-in-out infinite;
+}
+@keyframes jsLeadPulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 2px var(--js-accent),
+      0 0 12px rgba(255, 210, 63, 0.45),
+      var(--js-shadow);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px var(--js-accent),
+      0 0 24px rgba(255, 210, 63, 0.85),
+      var(--js-shadow);
+  }
+}
+
+/* Jammer / lineup strip. Background, backdrop-filter and border are
+ * intentionally scoped to states where the JammerBox is actually visible.
+ * When the box is hidden it sits at margin-left:-100% behind the team row;
+ * applying backdrop-filter / borders unconditionally there leaves faint
+ * horizontal lines escaping the panel's overflow:hidden clip on browsers
+ * that promote backdrop-filter into its own compositor layer. */
+#sb .TeamBox .JammerBox { background: var(--js-glass); color: var(--js-text); }
+#sb .ShowJammers .TeamBox .JammerBox.Show,
+#sb .TeamBox.Lineups.UseLT.PenaltyClocks .JammerBox {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-top: 1px solid var(--js-border);
+}
+#sb .TeamBox.Lineups.UseLT .JammerBox > div { border-right-color: var(--js-border); }
+
+/* Penalty states – warm amber, not alarm-red, suitable for juniors. */
+#sb .TeamBox.Lineups.UseLT .JammerBox .Penalized:not(.InBox) {
+  background: rgba(255, 179, 71, 0.25);
+  color: #ffe7c4;
+}
+#sb .TeamBox.Lineups.UseLT .JammerBox .InBox {
+  background: rgba(255, 122, 61, 0.55);
+  color: #fff;
+}
+
+#sb .TeamBox.Lineups.UseLT.InJam .Lead .JammerBox .Jamming {
+  color: var(--js-accent);
+  text-shadow: 0 0 8px rgba(255, 210, 63, 0.85);
+  animation: jsLeadStar 1.8s ease-in-out infinite;
+}
+@keyframes jsLeadStar {
+  0%, 100% { color: var(--js-accent); text-shadow: 0 0 6px rgba(255, 210, 63, 0.7); }
+  50%      { color: #fff;             text-shadow: 0 0 14px rgba(255, 210, 63, 1); }
+}
+
+#sb .TeamBox .JammerBox .PenaltyClock {
+  color: var(--js-warn-strong);
+  text-shadow: 0 0 6px rgba(255, 122, 61, 0.7);
+  font-weight: 800;
+}
+
+/* ---------- Clock box (top right) ---------- */
+
+#sb .ClockBox {
+  border-radius: var(--js-radius);
+  overflow: hidden;
+  box-shadow: var(--js-shadow);
+}
+
+#sb .ClockBox .ClockBarTop.barBackgroundTop {
+  background: var(--js-bg-2);
+  color: var(--js-text);
+}
+#sb .ClockBox .ClockBarTop .Name {
+  color: var(--js-muted);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+#sb .ClockBox .ClockBarMiddle.SlideDown {
+  background: var(--js-accent);
+}
+#sb .ClockBox .ClockDescription {
+  color: var(--js-bg-1);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+#sb .ClockBox .BottomRow {
+  background: var(--js-bg-2);
+  color: var(--js-text);
+  border-top: 1px solid var(--js-border);
+}
+#sb .ClockBox .Time {
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  font-weight: 900;
+}
+
+/* ---------- Overlay panels (roster / penalty / PPJ / upcoming) ---------- */
+
+#sb .OverlayPanel {
+  box-shadow: var(--js-shadow);
+  border-radius: var(--js-radius);
+  overflow: hidden;
+  background: var(--js-bg-2);
+}
+#sb .OverlayPanel h1,
+#sb .OverlayPanel h2,
+#sb .OverlayPanel h4,
+#sb .OverlayPanel h5 {
+  margin: 0;
+}
+#sb .Upcoming.OverlayPanel {
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+#sb .OverlayPanel h1 {
+  background: linear-gradient(90deg, var(--js-bg-2), var(--js-bg-3));
+  color: var(--js-text);
+  border-radius: var(--js-radius) var(--js-radius) 0 0;
+  letter-spacing: 0.08em;
+  border-bottom: 3px solid var(--js-accent);
+}
+#sb .OverlayPanel h2 {
+  background: var(--js-bg-3);
+  color: var(--js-muted);
+  letter-spacing: 0.1em;
+  border-radius: 0 0 var(--js-radius) var(--js-radius);
+}
+#sb .OverlayPanel h4 {
+  background: var(--js-bg-2);
+  color: var(--js-text);
+  border-bottom: 1px solid var(--js-border);
+}
+#sb .OverlayPanel h5 {
+  background: var(--js-bg-3);
+  color: var(--js-text);
+}
+
+/* ---------- Points per jam ---------- */
+
+#sb .PPJContainer {
+  background: var(--js-bg-2);
+  border-top: 1px solid var(--js-border);
+  border-bottom: 1px solid var(--js-border);
+}
+#sb .PPJBox [Team='1'] { border-bottom: 1px solid var(--js-border-strong); }
+#sb .PPJBox [Team='2'] { border-top: 1px solid var(--js-border-strong); }
+#sb .PPJBox [Period='2'] { border-left: 2px dashed var(--js-border-strong); }
+
+#sb .GraphBlock {
+  background: linear-gradient(180deg, var(--js-accent-2), var(--js-bg-3));
+  color: var(--js-text);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+#sb .PPJBox [Period='2'] .GraphBlock {
+  background: linear-gradient(180deg, var(--js-accent-3), var(--js-bg-3));
+}
+#sb .GraphBlock.Lead .JammerStar { color: var(--js-accent); }
+#sb .GraphBlock.Lead.Lost .JammerStar { color: var(--js-warn-strong); }
+#sb .Points { color: var(--js-text); }
+
+/* ---------- Roster panel ---------- */
+
+#sb .RosterTeam .Team .Skater {
+  color: var(--js-text);
+  border-bottom: 1px solid var(--js-border);
+}
+#sb .RosterTeam .Team .Skater:nth-child(odd)  { background: var(--js-bg-2); margin-right: 4%; }
+#sb .RosterTeam .Team .Skater:nth-child(even) { background: var(--js-bg-3); }
+#sb .RosterTeam .Team .Skater .Number {
+  background: var(--js-bg-1);
+  color: var(--js-accent);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+#sb .RosterTeam .Team .Skater .Name { color: var(--js-text); padding-left: 0.3em; }
+#sb .RosterTeam .Team .Skater .Flags { color: var(--js-muted); }
+
+/* ---------- Penalty panel — warm, not alarming ---------- */
+
+#sb .PenaltyTeam .Team .Skater:nth-child(odd)  { background: var(--js-bg-2); }
+#sb .PenaltyTeam .Team .Skater:nth-child(even) { background: var(--js-bg-3); }
+#sb .PenaltyTeam .Team .Number,
+#sb .PenaltyTeam .Team .Name { color: var(--js-text); }
+#sb .PenaltyTeam .Skater .Penalty {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--js-text);
+  border-radius: 6px;
+}
+#sb .PenaltyTeam .Skater[warn='1'] .Penalty { background: var(--js-warn);        color: #2a1a00; }
+#sb .PenaltyTeam .Skater[warn='2'] .Penalty { background: var(--js-warn-strong); color: #fff; }
+#sb .PenaltyTeam .Skater[warn='3'] .Penalty {
+  background: var(--js-accent-3);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255, 95, 168, 0.7);
+}
+#sb .PenaltyTeam .Skater[warn='3'] .Number,
+#sb .PenaltyTeam .Skater[warn='3'] .Name { color: #ffd0e6; }
+
+/* ---------- Upcoming panel ---------- */
+
+#sb .Upcoming { background: transparent; }
+#sb .Upcoming .UpcomingTitle {
+  color: var(--js-text);
+  text-shadow: 0 0 18px rgba(255, 210, 63, .4);
+}
+#sb .Upcoming .UpcomingTeam h1 {
+  border-radius: 999px;
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  padding: 0.5em 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 900;
+}
+#sb .Upcoming .UpcomingVS {
+  background: var(--js-accent);
+  color: var(--js-bg-1);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px rgba(255, 210, 63, 0.3),
+    0 0 26px rgba(255, 210, 63, 0.65);
+}
+
+/* ---------- Lower third ---------- */
+
+#sb .LowerThird {
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+}
+#sb .LowerThird .Line1 {
+  background: linear-gradient(180deg, var(--js-bg-2), var(--js-bg-1));
+  color: var(--js-text);
+  border-bottom: 4px solid var(--js-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+#sb .LowerThird .Line2 {
+  background: var(--js-bg-3);
+  color: var(--js-text);
+}
+
+/* ---------- Smoother panel transitions ---------- */
+
+#sb div.AnimatedPanel {
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity   0.6s ease,
+              width     0.9s ease,
+              height    0.9s ease;
+}
+#sb div.AnimatedPanel.AnimationDelay {
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s;
+}
+
+/* ---------- Dynamic effects ---------- */
+
+#sb .TeamBox .Team .Score {
+  transition: transform 0.25s ease, text-shadow 0.25s ease;
+  transform-origin: right center;
+}
+/* Score pulse: bouncy celebration in magenta + yellow. */
+#sb .TeamBox .Team .Score.ScorePulse {
+  animation: jsScorePulse 0.9s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes jsScorePulse {
+  0%   { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); color: #fff; }
+  20%  { transform: scale(1.4);  text-shadow: 0 0 22px var(--js-accent), 0 0 12px var(--js-accent-3); color: #fff; }
+  100% { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); color: #fff; }
+}
+
+#sb .TeamBox .Team .Mini .JamScore.JamPulse {
+  animation: jsJamScorePulse 0.7s ease;
+}
+@keyframes jsJamScorePulse {
+  0%   { color: var(--js-accent); text-shadow: none; }
+  30%  { color: #fff;              text-shadow: 0 0 12px var(--js-accent); transform: scale(1.25); }
+  100% { color: var(--js-accent); text-shadow: none; transform: scale(1); }
+}
+
+/* Pulsing teal ring around the top-right clock while the jam is running. */
+#sb .ClockBox .ClockRing {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border: 2px solid transparent;
+  border-radius: var(--js-radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#sb .ClockBox .ClockRing.Running {
+  opacity: 1;
+  border-color: var(--js-accent-2);
+  animation: jsClockRing 1.8s ease-in-out infinite;
+}
+@keyframes jsClockRing {
+  0%, 100% { box-shadow: inset 0 0 10px 1px rgba(46, 196, 182, 0.55); }
+  50%      { box-shadow: inset 0 0 22px 4px rgba(46, 196, 182, 0.9); }
+}
+
+/* Friendly jam-start sparkle: bright but warm, not a danger flash. */
+#sb .JamFlash {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 9;
+  background:
+    radial-gradient(circle at 50% 40%,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 210, 63, 0.22) 30%,
+      rgba(255, 95, 168, 0.10) 55%,
+      rgba(255, 210, 63, 0.00) 70%);
+}
+#sb .JamFlash.Flash {
+  animation: jsJamFlash 0.7s ease-out;
+}
+@keyframes jsJamFlash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}

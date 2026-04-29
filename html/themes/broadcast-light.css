@@ -112,12 +112,16 @@
   50%      { box-shadow: inset 0 0 0 2px var(--bc-accent), 0 0 24px rgba(11, 95, 255, 0.6),  var(--bc-shadow); }
 }
 
-/* Jammer / lineup strip. Light frosted glass. */
-#sb .TeamBox .JammerBox {
-  background: var(--bc-glass);
+/* Jammer / lineup strip. Light frosted glass.
+ * Backdrop-filter and the top border are scoped to states where the box
+ * is visible — when hidden (margin-left:-100%) those properties cause
+ * faint horizontal lines to escape the panel's overflow:hidden clip in
+ * browsers that promote backdrop-filter to its own compositor layer. */
+#sb .TeamBox .JammerBox { background: var(--bc-glass); color: var(--bc-text); }
+#sb .ShowJammers .TeamBox .JammerBox.Show,
+#sb .TeamBox.Lineups.UseLT.PenaltyClocks .JammerBox {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  color: var(--bc-text);
   border-top: 1px solid var(--bc-border);
 }
 #sb .TeamBox.Lineups.UseLT .JammerBox > div { border-right-color: var(--bc-border); }
