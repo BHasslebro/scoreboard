@@ -78,6 +78,11 @@
 #sb .TeamBox [Team='1'] .Team { border-radius: 0 var(--js-radius) 0 0; }
 #sb .TeamBox [Team='2'] .Team { border-radius: 0 0 var(--js-radius) 0; }
 
+/* When the JammerBox is visible alongside the Team in non-lineup mode it
+ * butts up against the Team's right edge with a square left corner; flatten
+ * the Team's right-side rounding to match (mirrors the default view). */
+#sb .TeamBox:not(.Lineups.UseLT).ShowJammers.InJam .Team { border-radius: 0; }
+
 #sb .TeamBox .Team .Name {
   color: var(--js-text);
   border-left: 3px solid var(--js-accent-2);
@@ -115,28 +120,11 @@
   box-shadow: inset 0 0 0 1px var(--js-border-strong);
 }
 
-/* Lead jam: cheerful yellow glow, gentler pulse than broadcast theme. */
-#sb .TeamBox.InJam .Lead .Team {
-  box-shadow:
-    inset 0 0 0 2px var(--js-accent),
-    0 0 16px rgba(255, 210, 63, 0.6),
-    var(--js-shadow);
-  animation: jsLeadPulse 2.2s ease-in-out infinite;
-}
-@keyframes jsLeadPulse {
-  0%, 100% {
-    box-shadow:
-      inset 0 0 0 2px var(--js-accent),
-      0 0 12px rgba(255, 210, 63, 0.45),
-      var(--js-shadow);
-  }
-  50% {
-    box-shadow:
-      inset 0 0 0 2px var(--js-accent),
-      0 0 24px rgba(255, 210, 63, 0.85),
-      var(--js-shadow);
-  }
-}
+/* Lead jam: highlight via the Indicator + Jammer star only.
+ * The themed TeamBox has rounded corners and `overflow: hidden`, so a
+ * rectangular inset border on `.Team` collides with the rounded outer
+ * corner and the outer glow gets clipped — looked worse than the default
+ * view's plain star highlight, so we omit the row-level glow here. */
 
 /* Jammer / lineup strip. Background, backdrop-filter and border are
  * intentionally scoped to states where the JammerBox is actually visible.
