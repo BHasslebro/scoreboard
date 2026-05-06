@@ -529,3 +529,128 @@ div.AnimatedPanel.AnimationDelay { transition: transform 1s ease-in-out .3s; }
 .FinalScore .FSConfetti span:nth-child(22) { left: 67%; background: #66ff99; animation-delay: 3.3s; animation-duration: 3.5s; }
 .FinalScore .FSConfetti span:nth-child(23) { left: 87%; background: #ff99cc; animation-delay: 3.1s; animation-duration: 3.2s; }
 .FinalScore .FSConfetti span:nth-child(24) { left: 95%; background: #c299ff; animation-delay: 3.5s; animation-duration: 3.0s; }
+
+
+/* ============================================================
+ * Jammer Spotlight — bottom-corner pop-up card when a jammer
+ * is confirmed.  Team 1 appears bottom-left, Team 2 bottom-right.
+ * Player photo (transparent PNG) stands above the card, with
+ * number, name, and a team-coloured accent bar.  A thin draining
+ * bar at the bottom shows the remaining display time (6 s).
+ * ============================================================ */
+
+.JammerSpotlight {
+  position: fixed;
+  bottom: 2%;
+  z-index: 30;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  background: rgba(12, 14, 22, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border-top: 4px solid #888;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.09);
+  overflow: visible;
+  white-space: normal;
+  min-width: 11em;
+  max-width: 17em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(50px);
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.2,.9,.2,1);
+}
+.JammerSpotlight.Team1 { left: 1.5%; }
+.JammerSpotlight.Team2 { right: 1.5%; flex-direction: row-reverse; }
+.JammerSpotlight.Show  { opacity: 1; transform: translateY(0); }
+
+/* Team colour accent bar: applied as border-top on the card so it
+   follows the card's own border-radius without any overflow artifact. */
+.JammerSpotlight {
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.2,.9,.2,1), border-top-color 0.3s ease;
+}
+
+/* Player photo — sticks up above the card bottom edge */
+.JammerSpotlight .JSPhoto {
+  display: block;
+  width: 6.5em;
+  max-height: 13em;
+  flex-shrink: 0;
+  align-self: flex-end;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6));
+  /* The global `.AnimatedPanel img { height:0 }` rule is scoped only to
+     AnimatedPanel children so it does not affect this image. */
+}
+.JammerSpotlight .JSPhoto[src=""] { display: none; }
+
+/* Info column beside the photo */
+.JammerSpotlight .JSInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.08em;
+  padding: 0.7em 0.75em 0.85em 0.5em;
+  color: #fff;
+  overflow: hidden;
+  white-space: normal;
+}
+.JammerSpotlight.Team2 .JSInfo {
+  padding: 0.7em 0.5em 0.85em 0.75em;
+  text-align: right;
+  align-items: flex-end;
+}
+
+/* "JAMMER ★" label */
+.JammerSpotlight .JSBadge {
+  font-size: 0.52em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(255, 210, 50, 0.92);
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Jersey number — large and bold */
+.JammerSpotlight .JSNumber {
+  font-size: 2.5em;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Player name */
+.JammerSpotlight .JSName {
+  font-size: 0.70em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ddd;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: hidden;
+}
+
+/* Draining countdown bar at the bottom of the card */
+.JammerSpotlight .JSTimer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 14px 14px;
+  background: rgba(255,255,255,0.3);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+/* When the card is visible, drain the bar over DISPLAY_DURATION seconds.
+   The 0.55s delay lets the slide-in animation finish first. */
+.JammerSpotlight.Show .JSTimer {
+  transform: scaleX(0);
+  transition: transform 6s linear 0.55s;
+}

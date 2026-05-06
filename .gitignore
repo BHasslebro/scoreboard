@@ -11,6 +11,7 @@ config/autosave
 html/stream
 html/images/teamlogo
 html/images/sponsor_banner
+html/images/player_photos
 html/images/fullscreen
 !html/images/fullscreen/test-image.png
 html/videos/fullscreen

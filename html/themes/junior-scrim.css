@@ -369,26 +369,19 @@
 /* ---------- Dynamic effects ---------- */
 
 #sb .TeamBox .Team .Score {
-  transition: transform 0.25s ease, text-shadow 0.25s ease;
-  transform-origin: right center;
+  transform-origin: center;
 }
-/* Score pulse: bouncy celebration in magenta + yellow. */
+/* Score pulse — triggered by the overlay's own ovlScorePulse (ScorePulse class). */
 #sb .TeamBox .Team .Score.ScorePulse {
-  animation: jsScorePulse 0.9s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-@keyframes jsScorePulse {
-  0%   { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); color: #fff; }
-  20%  { transform: scale(1.4);  text-shadow: 0 0 22px var(--js-accent), 0 0 12px var(--js-accent-3); color: #fff; }
-  100% { transform: scale(1);    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); color: #fff; }
+  display: inline-block;
+  animation: jsOverlayScoreParty 0.7s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
+/* JamScore pulse — triggered by ovlJamScorePulse (JamPulse class). */
 #sb .TeamBox .Team .Mini .JamScore.JamPulse {
-  animation: jsJamScorePulse 0.7s ease;
-}
-@keyframes jsJamScorePulse {
-  0%   { color: var(--js-accent); text-shadow: none; }
-  30%  { color: #fff;              text-shadow: 0 0 12px var(--js-accent); transform: scale(1.25); }
-  100% { color: var(--js-accent); text-shadow: none; transform: scale(1); }
+  display: inline-block;
+  transform-origin: center;
+  animation: jsOverlayJamParty 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 /* Pulsing teal ring around the top-right clock while the jam is running. */
@@ -529,6 +522,51 @@ body.box_flat #scoreboard .Team>.Score.Box { border-radius: 14px; }
 #scoreboard .Team>.JamScore { font-weight: 800; }
 #scoreboard .Team>.JamScore:not(.NoInitial):not(.Overtime) { color: #115e59; }
 
+/* Overtime: JamScore cycles through the junior palette so both teams
+ * know something fierce is happening. */
+#scoreboard .Team>.JamScore.Overtime {
+  animation: jsOvertimeShimmer 1.3s ease-in-out infinite;
+}
+@keyframes jsOvertimeShimmer {
+  0%, 100% { color: var(--js-accent-2); text-shadow: 0 0 10px rgba(46, 196, 182, 0.75); }
+  38%      { color: var(--js-accent);   text-shadow: 0 0 14px rgba(255, 210, 63, 0.95); }
+  70%      { color: var(--js-accent-3); text-shadow: 0 0 12px rgba(255, 95, 168, 0.85); }
+}
+
+/* Lead: while a team has the lead the jammer Name is already animated by
+ * jsMainLead above; also pulse the whole star-pass/lead row background. */
+#scoreboard .Team>.Jammer.HasLead {
+  background: rgba(255, 210, 63, 0.06);
+  animation: jsLeadRowGlow 2.2s ease-in-out infinite;
+}
+@keyframes jsLeadRowGlow {
+  0%, 100% { background: rgba(255, 210, 63, 0.04); }
+  50%      { background: rgba(255, 210, 63, 0.13); }
+}
+
+/* Lead acquisition flare: one-shot burst on the jammer Name (JS adds
+ * JsLeadFlare class via junior-scrim.js). */
+@keyframes jsLeadFlare {
+  0%   { color: var(--js-accent); text-shadow: 0 0 8px rgba(255, 210, 63, 0.7); }
+  20%  { color: #fff;             text-shadow: 0 0 28px rgba(255, 210, 63, 1), 0 0 50px rgba(255, 95, 168, 0.65), 0 0 70px rgba(46, 196, 182, 0.5); }
+  60%  { color: var(--js-accent); text-shadow: 0 0 16px rgba(255, 210, 63, 0.85); }
+  100% { color: var(--js-accent); text-shadow: 0 0 8px rgba(255, 210, 63, 0.7); }
+}
+#scoreboard .Team>.Jammer.HasLead>.Name.JsLeadFlare {
+  animation: jsLeadFlare 0.95s ease-out;
+}
+
+/* Jam clock urgency: JS adds JsClockLow to the Time element when ≤ 30 s
+ * remain. Warm amber glow + fast pulse so skaters and benches notice. */
+#scoreboard .ShowInJam.Jam.Large .Box.Time.JsClockLow {
+  color: var(--js-warn-strong) !important;
+  animation: jsMainClockUrgency 0.55s ease-in-out infinite;
+}
+@keyframes jsMainClockUrgency {
+  0%, 100% { text-shadow: 0 0 18px rgba(255, 122, 61, 0.8), 0 0 6px rgba(255, 122, 61, 0.6); }
+  50%      { text-shadow: 0 0 34px rgba(255, 122, 61, 1),   0 0 60px rgba(255, 210, 63, 0.4); }
+}
+
 /* Big period / jam clock — chunky and friendly. */
 #scoreboard .Clock.Large>.Box.Time { font-weight: 900; letter-spacing: 0.01em; }
 #scoreboard .Clock.Large>.Box.Name { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -622,41 +660,207 @@ body.box_flat #scoreboard .Team>.Score.Box { border-radius: 14px; }
   animation: jsJamBurst 0.85s ease-out;
 }
 
-/* Overlay view: bouncy "siffrorna växer" pop. Score is plain text in a
- * flex row, so a real transform is safe. We lift, scale, rotate a hair,
- * paint a colour wash and add a glow — confetti-without-confetti. */
+/* Keyframes reused by both ScorePulse (overlay) and JsScorePulse (main view unused now). */
 @keyframes jsOverlayScoreParty {
-  0%   { transform: scale(1)    rotate(0);    color: inherit;
-         text-shadow: 0 0 0 rgba(255, 210, 63, 0); }
-  20%  { transform: scale(1.28) rotate(-3deg); color: var(--js-accent);
-         text-shadow: 0 0 22px rgba(255, 210, 63, 0.95), 0 0 40px rgba(255, 95, 168, 0.4); }
-  45%  { transform: scale(1.32) rotate(3deg);  color: #fff;
-         text-shadow: 0 0 18px rgba(46, 196, 182, 0.85), 0 0 32px rgba(255, 95, 168, 0.6); }
-  70%  { transform: scale(0.94) rotate(0);     color: inherit;
-         text-shadow: 0 0 8px  rgba(255, 210, 63, 0.4); }
-  100% { transform: scale(1)    rotate(0);     color: inherit;
-         text-shadow: 0 0 0 rgba(255, 210, 63, 0); }
-}
-#sb .TeamBox .Team .Score.JsScorePulse {
-  display: inline-block;
-  transform-origin: center;
-  animation: jsOverlayScoreParty 0.95s cubic-bezier(0.34, 1.56, 0.64, 1);
+  0%   { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 210, 63, 0); }
+  20%  { transform: scale(1.12); text-shadow: 0 0 16px rgba(255, 210, 63, 0.9); }
+  60%  { transform: scale(1.08); text-shadow: 0 0 10px rgba(255, 210, 63, 0.55); }
+  100% { transform: scale(1);    text-shadow: 0 0 0 rgba(255, 210, 63, 0); }
 }
 
 @keyframes jsOverlayJamParty {
-  0%   { transform: scale(1)   rotate(0);     color: var(--js-accent);
-         text-shadow: 0 0 0 rgba(255, 95, 168, 0); }
-  25%  { transform: scale(1.55) rotate(-6deg); color: var(--js-accent-3);
-         text-shadow: 0 0 18px rgba(255, 95, 168, 0.9); }
-  55%  { transform: scale(1.45) rotate(6deg);  color: var(--js-accent);
-         text-shadow: 0 0 14px rgba(255, 210, 63, 0.85); }
-  80%  { transform: scale(0.92) rotate(0);     color: var(--js-accent);
-         text-shadow: 0 0 6px rgba(255, 210, 63, 0.4); }
-  100% { transform: scale(1)    rotate(0);     color: var(--js-accent);
-         text-shadow: 0 0 0 rgba(255, 95, 168, 0); }
+  0%   { transform: scale(1);    color: var(--js-accent); text-shadow: none; }
+  25%  { transform: scale(1.18); color: #fff;             text-shadow: 0 0 12px rgba(255, 95, 168, 0.85); }
+  70%  { transform: scale(1.05); color: var(--js-accent); text-shadow: 0 0 8px rgba(255, 210, 63, 0.6); }
+  100% { transform: scale(1);    color: var(--js-accent); text-shadow: none; }
 }
-#sb .TeamBox .Team .Mini .JamScore.JsJamPop {
+
+/* ==========================================================================
+ * More junior-energy enhancements (overlay view)
+ * ========================================================================== */
+
+/* ---------- Lead: continuous golden halo on the Indicator ---------- */
+
+/* While a team has lead the 'Lead' class sits on the sbForeach team wrapper
+ * (the direct child of .TeamBox.Wrapper). Use it to light up the Indicator. */
+#sb .TeamBox .Lead .Indicator {
+  box-shadow:
+    inset 0 0 0 1px var(--js-border-strong),
+    0 0 20px 4px rgba(255, 210, 63, 0.55);
+  animation: jsLeadIndicatorGlow 2.1s ease-in-out infinite;
+}
+@keyframes jsLeadIndicatorGlow {
+  0%, 100% { box-shadow: inset 0 0 0 1px var(--js-border-strong), 0 0 14px 2px rgba(255, 210, 63, 0.42); }
+  50%      { box-shadow: inset 0 0 0 1px var(--js-border-strong), 0 0 32px 9px rgba(255, 210, 63, 0.76); }
+}
+
+/* Lead acquisition burst: one-shot pop (JS adds JsLeadBurst to .Indicator). */
+@keyframes jsLeadBurstPop {
+  0%   { transform: scale(1);    filter: none; }
+  15%  { transform: scale(1.24); filter: brightness(1.75) drop-shadow(0 0 22px rgba(255, 210, 63, 1)) drop-shadow(0 0 12px rgba(46, 196, 182, 0.8)); }
+  42%  { transform: scale(0.92); filter: brightness(1.3)  drop-shadow(0 0 14px rgba(255, 210, 63, 0.6)); }
+  72%  { transform: scale(1.07); filter: brightness(1.1)  drop-shadow(0 0 10px rgba(255, 210, 63, 0.32)); }
+  100% { transform: scale(1);    filter: none; }
+}
+#sb .Lead .Indicator.JsLeadBurst {
+  animation: jsLeadBurstPop 1.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- Jam clock urgency (overlay): JS adds JsClockLow ---------- */
+
+#sb .ClockBox .JsClockLow {
+  color: var(--js-warn-strong) !important;
+  text-shadow: 0 0 16px rgba(255, 122, 61, 0.85) !important;
+  animation: jsOverlayClockUrgency 0.55s ease-in-out infinite;
+}
+@keyframes jsOverlayClockUrgency {
+  0%, 100% { text-shadow: 0 0 12px rgba(255, 122, 61, 0.7); }
+  50%      { text-shadow: 0 0 30px rgba(255, 122, 61, 1), 0 0 52px rgba(255, 210, 63, 0.38); }
+}
+
+/* ---------- Jam number pop: JS adds JsJamNumPop to the clock Name div --- */
+
+@keyframes jsJamNumPop {
+  0%   { transform: scale(1)    translateY(0);    color: inherit; }
+  25%  { transform: scale(1.55) translateY(-5px); color: var(--js-accent);
+         text-shadow: 0 0 16px rgba(255, 210, 63, 0.95); }
+  65%  { transform: scale(0.87) translateY(2px);  color: var(--js-accent-2); }
+  100% { transform: scale(1)    translateY(0);    color: inherit; text-shadow: none; }
+}
+#sb .ClockBarTop .JsJamNumPop {
   display: inline-block;
-  transform-origin: center;
-  animation: jsOverlayJamParty 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: jsJamNumPop 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- Intermission / final: celebratory color sweep ---------- */
+
+/* Standard view: the intermission message sweeps yellow→white→teal instead
+ * of sitting static on --js-accent. */
+#scoreboard .Clock.Intermission .Message {
+  animation: jsIntermissionColor 3s ease-in-out infinite;
+}
+@keyframes jsIntermissionColor {
+  0%, 100% { color: var(--js-accent);   text-shadow: 0 0 12px rgba(255, 210, 63, 0.7); }
+  35%      { color: #ffffff;            text-shadow: 0 0 22px rgba(255, 255, 255, 0.65); }
+  68%      { color: var(--js-accent-2); text-shadow: 0 0 14px rgba(46, 196, 182, 0.72); }
+}
+
+/* Overlay: the mid-bar description cycles through the three accent hues so
+ * the whole clock box feels like a celebration during intermission/final. */
+#sb .ClockBox .ClockBarMiddle.SlideDown {
+  animation: jsIntermissionBarPulse 3s ease-in-out infinite;
+}
+@keyframes jsIntermissionBarPulse {
+  0%, 100% { background: var(--js-accent);   color: var(--js-bg-1); }
+  35%      { background: var(--js-accent-2); color: var(--js-bg-1); }
+  68%      { background: var(--js-accent-3); color: #fff; }
+}
+
+
+/* ============================================================
+ * Jammer Spotlight card — shared styles.
+ *
+ * On the stream overlay these rules are provided by overlay/index.css.
+ * On the arena / main scoreboard view (html/views/standard) this theme
+ * is the only stylesheet loaded, so we include them here too.
+ * ============================================================ */
+
+.JammerSpotlight {
+  position: fixed;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  background: rgba(12, 14, 22, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border-top: 4px solid #888;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.09);
+  overflow: visible;
+  white-space: normal;
+  min-width: 11em;
+  max-width: 17em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(50px);
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.2,.9,.2,1), border-top-color 0.3s ease;
+}
+.JammerSpotlight.Team1 { left: 1.5%; }
+.JammerSpotlight.Team2 { right: 1.5%; flex-direction: row-reverse; }
+.JammerSpotlight.Show  { opacity: 1; transform: translateY(0); }
+
+.JammerSpotlight .JSPhoto {
+  display: block;
+  width: 6.5em;
+  max-height: 13em;
+  flex-shrink: 0;
+  align-self: flex-end;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.6));
+}
+.JammerSpotlight .JSPhoto[src=""] { display: none; }
+
+.JammerSpotlight .JSInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.08em;
+  padding: 0.7em 0.75em 0.85em 0.5em;
+  color: #fff;
+  overflow: hidden;
+  white-space: normal;
+}
+.JammerSpotlight.Team2 .JSInfo {
+  padding: 0.7em 0.5em 0.85em 0.75em;
+  text-align: right;
+  align-items: flex-end;
+}
+
+.JammerSpotlight .JSBadge {
+  font-size: 0.52em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(255, 210, 50, 0.92);
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.JammerSpotlight .JSNumber {
+  font-size: 2.5em;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.JammerSpotlight .JSName {
+  font-size: 0.70em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ddd;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: hidden;
+}
+
+.JammerSpotlight .JSTimer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 14px 14px;
+  background: rgba(255,255,255,0.3);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+.JammerSpotlight.Show .JSTimer {
+  transform: scaleX(0);
+  transition: transform 6s linear 0.55s;
 }

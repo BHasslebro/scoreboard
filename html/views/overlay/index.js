@@ -290,3 +290,104 @@ function ovlToClockType() {
 
   return ret;
 }
+
+/* ============================================================
+ * Jammer Spotlight
+ *
+ * When a jam is running and a jammer is assigned, a card slides
+ * up from the bottom corner (Team 1 left, Team 2 right) showing:
+ *   - team colour accent bar
+ *   - player photo from /images/player_photos/<TeamName>/<number>.png
+ *   - "JAMMER ★" badge, jersey number, player name
+ *   - a draining timer bar (6 s auto-dismiss)
+ *
+ * On star-pass the card updates to show the Pivot (new jammer).
+ * ============================================================ */
+(function () {
+  'use strict';
+
+  var DISPLAY_DURATION = 6000; // ms
+
+  // Per-team state
+  var _timers = { 1: null, 2: null };
+  var _shown  = { 1: null, 2: null }; // "number\x01name" prevents duplicate triggers
+
+  function _updateSpotlight(teamNum) {
+    if (!isTrue(WS.state['ScoreBoard.CurrentGame.InJam'])) {
+      _hideSpotlight(teamNum);
+      return;
+    }
+
+    var base     = 'ScoreBoard.CurrentGame.Team(' + teamNum + ')';
+    var starPass = isTrue(WS.state[base + '.StarPass']);
+    var pos      = starPass ? 'Pivot' : 'Jammer';
+    var number   = WS.state[base + '.Position(' + pos + ').RosterNumber'] || '';
+    var name     = WS.state[base + '.Position(' + pos + ').Name']         || '';
+
+    if (!number) {
+      _hideSpotlight(teamNum);
+      return;
+    }
+
+    // Avoid re-triggering for the same player within the same jam
+    var key = number + '\x01' + name;
+    if (_shown[teamNum] === key) return;
+    _shown[teamNum] = key;
+
+    var teamName  = WS.state[base + '.Name'] || '';
+    var teamColor = WS.state[base + '.Color(overlay.bg)'] || '#555';
+
+    var imgSrc = '/images/player_photos/'
+      + encodeURIComponent(teamName) + '/'
+      + encodeURIComponent(number) + '.png';
+
+    var $card = $('#jammerSpotlight' + teamNum);
+    $card.css('border-top-color', teamColor);
+    $card.find('.JSNumber').text(number);
+    $card.find('.JSName').text(name);
+
+    var $img = $card.find('.JSPhoto');
+    $img.off('error load')
+      .on('error', function () { $(this).hide(); })
+      .on('load',  function () { $(this).show(); })
+      .show()
+      .attr('src', imgSrc);
+
+    // Remove then re-add .Show so CSS transitions (including the timer bar)
+    // restart cleanly even if the card was already visible
+    $card.removeClass('Show');
+    void $card[0].offsetWidth; // force reflow
+    $card.addClass('Show');
+
+    if (_timers[teamNum]) clearTimeout(_timers[teamNum]);
+    _timers[teamNum] = setTimeout(function () {
+      _hideSpotlight(teamNum);
+    }, DISPLAY_DURATION);
+  }
+
+  function _hideSpotlight(teamNum) {
+    $('#jammerSpotlight' + teamNum).removeClass('Show');
+    _shown[teamNum] = null;
+    if (_timers[teamNum]) {
+      clearTimeout(_timers[teamNum]);
+      _timers[teamNum] = null;
+    }
+  }
+
+  // Team 1 — fires when jammer/pivot assignment or jam state changes
+  WS.Register([
+    'ScoreBoard.CurrentGame.Team(1).Position(Jammer).RosterNumber',
+    'ScoreBoard.CurrentGame.Team(1).Position(Pivot).RosterNumber',
+    'ScoreBoard.CurrentGame.Team(1).StarPass',
+    'ScoreBoard.CurrentGame.InJam'
+  ], function () { _updateSpotlight(1); });
+
+  // Team 2
+  WS.Register([
+    'ScoreBoard.CurrentGame.Team(2).Position(Jammer).RosterNumber',
+    'ScoreBoard.CurrentGame.Team(2).Position(Pivot).RosterNumber',
+    'ScoreBoard.CurrentGame.Team(2).StarPass',
+    'ScoreBoard.CurrentGame.InJam'
+  ], function () { _updateSpotlight(2); });
+
+}());
