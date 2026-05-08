@@ -98,6 +98,9 @@ public class ScoreBoardWebserver {
 
         HttpServlet ms = new MediaServlet(scoreBoard, new File(BasePath.get(), "html").getPath());
         sch.addServlet(new ServletHolder(ms), "/Media/*");
+
+        HttpServlet overlayServlet = new OverlayServlet(scoreBoard, jsm);
+        sch.addServlet(new ServletHolder(overlayServlet), "/Overlay");
     }
 
     public void start() {
