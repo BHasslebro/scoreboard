@@ -13,17 +13,17 @@
         <div class="Clock" sbClass="sbHide: ^Clock(Intermission).Running | Running: Running | NoMoreJam: ^NoMoreJam" sbContext="Clock(Period)">
           <div class="ClockName AutoFit"><span sbDisplay="Name" sbAutoFitOn="Running"></span> <span sbDisplay="Number"></span></div>
           <div class="Time AutoFit sbClock">
-            <button sbSet="Time: -1000: change">-</button>
+            <button aria-label="Subtract 1 second" title="Subtract 1 second" sbSet="Time: -1000: change">-</button>
             <span sbDisplay="Time: sbToLongTime"></span>
-            <button sbSet="Time: +1000: change">+</button>
+            <button aria-label="Add 1 second" title="Add 1 second" sbSet="Time: +1000: change">+</button>
           </div>
         </div>
         <div class="Clock" sbClass="sbHide: Running: ! | Running: Running" sbContext="Clock(Intermission)">
           <div class="ClockName AutoFit"><span sbDisplay="Name" sbAutoFitOn="Running"></span> <span sbDisplay="Number"></span></div>
           <div class="Time AutoFit sbClock">
-            <button sbSet="Time: -1000: change">-</button>
+            <button aria-label="Subtract 1 second" title="Subtract 1 second" sbSet="Time: -1000: change">-</button>
             <span sbDisplay="Time: sbToLongTime"></span>
-            <button sbSet="Time: +1000: change">+</button>
+            <button aria-label="Add 1 second" title="Add 1 second" sbSet="Time: +1000: change">+</button>
           </div>
         </div>
       </div>
@@ -31,9 +31,9 @@
         <div sbForeach="Clock: Jam, Lineup, Timeout: only" class="Clock" sbClass="Running: Running | InJam: ^InJam | NoMoreJam: ^NoMoreJam">
           <div class="ClockName AutoFit"><span sbDisplay="Name"></span> <span sbDisplay="Number"></span></div>
           <div class="Time AutoFit sbClock">
-            <button sbSet="Time: -1000: change">-</button>
+            <button aria-label="Subtract 1 second" title="Subtract 1 second" sbSet="Time: -1000: change">-</button>
             <span sbDisplay="Time: sbToLongTime"></span>
-            <button sbSet="Time: +1000: change">+</button>
+            <button aria-label="Add 1 second" title="Add 1 second" sbSet="Time: +1000: change">+</button>
           </div>
         </div>
       </div>

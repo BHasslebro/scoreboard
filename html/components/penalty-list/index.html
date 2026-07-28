@@ -38,9 +38,9 @@
         <button sbClass="sbHide: IsCurrent" sbSet="IsCurrent">Unend</button>
       </span>
       <span sbClass="sbInvisible: IsCurrent: !">
-        <button sbSet="Clock.Time:-1000:change">-1</button>
-        <button sbToggle="TimingStopped"><span class="ui-icon ui-icon-pause"></span></button>
-        <button sbSet="Clock.Time:+1000:change">+1</button>
+        <button aria-label="Subtract 1 second" title="Subtract 1 second" sbSet="Clock.Time:-1000:change">-1</button>
+        <button aria-label="Pause timing" title="Pause timing" sbToggle="TimingStopped"><span class="ui-icon ui-icon-pause"></span></button>
+        <button aria-label="Add 1 second" title="Add 1 second" sbSet="Clock.Time:+1000:change">+1</button>
       </span>
       <span>
         <span sbDisplay="PenaltyDetails: penDetailButtons: html"></span>
