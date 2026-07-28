@@ -4,6 +4,17 @@ var currrentPanel = '';
 (function () {
   $('#PanelSelect').val('');
   $('#Preview>iframe').css('width', $('#PreviewSize [dim="width"]').val()).css('height', $('#PreviewSize [dim="height"]').val())
+  // Propagate ?theme=... from the admin page URL to the preview iframe so the
+  // selected theme is visible in the preview too (index.js only rewrites
+  // [href*="?"] links, not iframe srcs).
+  var theme = new URL(window.location).searchParams.get('theme');
+  if (theme) {
+    $('#Preview>iframe').each(function () {
+      var url = new URL(this.getAttribute('src'), window.location);
+      url.searchParams.set('theme', theme);
+      this.setAttribute('src', url.pathname + url.search);
+    });
+  }
 })();
 
 function ovaKeyHandler(k, v, elem, e) {
